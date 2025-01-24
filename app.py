@@ -24,6 +24,10 @@ def create_driver():
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
+@app.route('/')
+def home():
+    return "The app is running!"
+
 @app.route('/scrape', methods=['POST'])
 def scrape():
     url = request.form.get('url')
@@ -57,4 +61,5 @@ def scrape():
                 pass
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Production-ready run configuration
+    app.run(host='0.0.0.0', port=5000, debug=False)
