@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -10,23 +10,22 @@ app = Flask(__name__)
 
 # Function to create the Selenium WebDriver
 def create_driver():
-    chromedriver_autoinstaller.install()  # Ensures the appropriate ChromeDriver version is installed
+    chromedriver_autoinstaller.install()
     options = Options()
-    options.add_argument("--headless")  # Run in headless mode
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     
-    # Create a unique temporary directory for user data
     temp_user_data_dir = tempfile.mkdtemp()
     options.add_argument(f"--user-data-dir={temp_user_data_dir}")
     
-    service = Service()  # No need to specify path, chromedriver-autoinstaller handles it
+    service = Service()
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
 @app.route('/')
 def home():
-    return "The app is running!"
+    return send_from_directory('.', 'index.html')  # Serve the HTML file
 
 @app.route('/scrape', methods=['POST'])
 def scrape():
@@ -38,21 +37,20 @@ def scrape():
         driver = create_driver()
         driver.get(url)
         
-        # Example logic to extract product data (modify as per your requirements)
+        # Example logic to extract product data
         products = []
         product_elements = driver.find_elements_by_css_selector('.product-class')  # Replace with actual CSS selector
         
         for product in product_elements:
             title = product.find_element_by_css_selector('.title-class').text  # Replace with actual CSS selector
-            product_url = product.find_element_by_css_selector('a').get_attribute('href')  # Replace with actual selector
+            product_url = product.find_element_by_css_selector('a').get_attribute('href')
             products.append({"title": title, "url": product_url})
         
-        driver.quit()  # Close the driver
+        driver.quit()
         return jsonify({"products": products})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        # Ensure all temp directories are cleaned up
         temp_dirs = [f.path for f in os.scandir(tempfile.gettempdir()) if f.is_dir()]
         for temp_dir in temp_dirs:
             try:
@@ -61,5 +59,4 @@ def scrape():
                 pass
 
 if __name__ == '__main__':
-    # Production-ready run configuration
     app.run(host='0.0.0.0', port=5000, debug=False)
